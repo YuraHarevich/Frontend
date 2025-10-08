@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../hooks/redux'
 import { registerUser, clearError } from '../store/slices/authSlice'
 import type { RegisterCredentials } from '../types/auth'
+import '../../styles/registration.css'
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState<RegisterCredentials>({
@@ -42,7 +43,12 @@ const Register: React.FC = () => {
       return
     }
 
-    const { confirmPassword, ...registerData } = formData
+  const formattedData = {
+    ...formData,
+    birthDate: formData.birthDate ? `${formData.birthDate}T00:00:00` : ''
+  }
+
+    const { confirmPassword, ...registerData } = formattedData
     const result = await dispatch(registerUser(registerData))
     
     if (registerUser.fulfilled.match(result)) {
@@ -51,87 +57,165 @@ const Register: React.FC = () => {
   }
 
   return (
-    <div className="auth-container">
-      <h2>Register</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <input
-            type="text"
-            name="username"
-            placeholder="Username"
-            value={formData.username}
-            onChange={handleChange}
-            required
-          />
+    <div className="register-container">
+      <div className="register-wrapper">
+        <div className="register-card">
+          {/* Logo */}
+          <div className="logo-container">
+            <h1 className="logo-text">Join Instantgram</h1>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="register-form">
+            <div className="form-group">
+              <label htmlFor="username" className="form-label">
+                Username
+              </label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                placeholder="Choose a username"
+                value={formData.username}
+                onChange={handleChange}
+                className="form-input"
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="email" className="form-label">
+                Email
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="your.email@example.com"
+                value={formData.email}
+                onChange={handleChange}
+                className="form-input"
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="firstname" className="form-label">
+                  First Name
+                </label>
+                <input
+                  id="firstname"
+                  name="firstname"
+                  type="text"
+                  placeholder="John"
+                  value={formData.firstname}
+                  onChange={handleChange}
+                  className="form-input"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="lastname" className="form-label">
+                  Last Name
+                </label>
+                <input
+                  id="lastname"
+                  name="lastname"
+                  type="text"
+                  placeholder="Doe"
+                  value={formData.lastname}
+                  onChange={handleChange}
+                  className="form-input"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="birthDate" className="form-label">
+                Date of Birth
+              </label>
+              <input
+                id="birthDate"
+                name="birthDate"
+                type="date"
+                value={formData.birthDate}
+                onChange={handleChange}
+                className="form-input"
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="password" className="form-label">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="Create a strong password"
+                value={formData.password}
+                onChange={handleChange}
+                className="form-input"
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="confirmPassword" className="form-label">
+                Confirm Password
+              </label>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                placeholder="Confirm your password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                className="form-input"
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            {error && (
+              <div className="error-message">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="register-button"
+            >
+              {isLoading ? 'Registering...' : 'Sign Up'}
+            </button>
+          </form>
+
+          {/* Login Link */}
+          <div className="login-link-container">
+            <p className="login-text">
+              Already have an account?{' '}
+              <Link
+                to="/login"
+                className="login-link"
+              >
+                Log in
+              </Link>
+            </p>
+          </div>
         </div>
-        <div>
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div>
-          <input
-            type="text"
-            name="firstname"
-            placeholder="First Name"
-            value={formData.firstname}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div>
-          <input
-            type="text"
-            name="lastname"
-            placeholder="Last Name"
-            value={formData.lastname}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div>
-          <input
-            type="date"
-            name="birthDate"
-            placeholder="Birth Date"
-            value={formData.birthDate}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div>
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div>
-          <input
-            type="password"
-            name="confirmPassword"
-            placeholder="Confirm Password"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        {error && <div className="error">{error}</div>}
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Registering...' : 'Register'}
-        </button>
-      </form>
-      <p>
-        Already have an account? <Link to="/login">Login here</Link>
-      </p>
+      </div>
     </div>
   )
 }

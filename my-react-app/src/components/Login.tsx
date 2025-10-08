@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../hooks/redux'
 import { loginUser, clearError } from '../store/slices/authSlice'
 import type { LoginCredentials } from '../types/auth'
+import '../../styles/login.css'
 
 const Login: React.FC = () => {
   const [formData, setFormData] = useState<LoginCredentials>({
@@ -39,37 +40,86 @@ const Login: React.FC = () => {
   }
 
   return (
-    <div className="auth-container">
-      <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <input
-            type="text"
-            name="username"
-            placeholder="Username"
-            value={formData.username}
-            onChange={handleChange}
-            required
-          />
+    <div className="login-container">
+      <div className="login-wrapper">
+        <div className="login-card">
+          {/* Logo */}
+          <div className="logo-container">
+            <h1 className="logo-text">Instantgram</h1>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="login-form">
+            <div className="form-group">
+              <label htmlFor="username" className="form-label">
+                Username
+              </label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                placeholder="Enter your username"
+                value={formData.username}
+                onChange={handleChange}
+                className="form-input"
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="password" className="form-label">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="Enter your password"
+                value={formData.password}
+                onChange={handleChange}
+                className="form-input"
+                required
+                disabled={isLoading}
+              />
+            </div>
+
+            {error && (
+              <div className="error-message">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="login-button"
+            >
+              {isLoading ? 'Logging in...' : 'Log In'}
+            </button>
+          </form>
+
+          {/* Divider */}
+          <div className="divider">
+            <div className="divider-line"></div>
+            <span className="divider-text">OR</span>
+            <div className="divider-line"></div>
+          </div>
+
+          {/* Register Link */}
+          <div className="register-link-container">
+            <p className="register-text">
+              Don't have an account?{' '}
+              <Link
+                to="/register"
+                className="register-link"
+              >
+                Sign up
+              </Link>
+            </p>
+          </div>
         </div>
-        <div>
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        {error && <div className="error">{error}</div>}
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Logging in...' : 'Login'}
-        </button>
-      </form>
-      <p>
-        Don't have an account? <Link to="/register">Register here</Link>
-      </p>
+      </div>
     </div>
   )
 }
