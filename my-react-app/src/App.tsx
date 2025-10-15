@@ -1,19 +1,31 @@
-import React from 'react'
+// App.tsx
+import React, { useEffect } from 'react'
 import { Provider } from 'react-redux'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import store from './store'
 import { useAppSelector, useAppDispatch } from './hooks/redux'
-import { logout } from './store/slices/authSlice'
+import { validateToken } from './store/slices/authSlice'
 import Login from './components/Login'
 import Register from './components/Register'
-import Dashboard from './components/Dashboard'
+import { Home } from './components/Home'
+import ProtectedRoute from './components/ProtectedRoute'
 
 const AppContent: React.FC = () => {
-  const { isAuthenticated, user } = useAppSelector((state) => state.auth)
+  const { isAuthenticated, user, accessToken } = useAppSelector((state) => state.auth)
   const dispatch = useAppDispatch()
 
+  useEffect(() => {
+    // При загрузке приложения проверяем токен, если он есть
+    if (accessToken) {
+      dispatch(validateToken())
+    }
+  }, [dispatch, accessToken])
+
   const handleLogout = () => {
-    dispatch(logout())
+    // logout импортируем и используем из authSlice
+    import('./store/slices/authSlice').then(({ logout }) => {
+      dispatch(logout())
+    })
   }
 
   return (
@@ -22,25 +34,27 @@ const AppContent: React.FC = () => {
         <Routes>
           <Route 
             path="/login" 
-            element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} 
+            element={!isAuthenticated ? <Login /> : <Navigate to="/home" />} 
           />
           <Route 
             path="/register" 
-            element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} 
+            element={!isAuthenticated ? <Register /> : <Navigate to="/home" />} 
           />
           <Route 
+          path="/home" 
+          element={
+            <ProtectedRoute>
+              <Home onLogout={handleLogout} currentUser={user} />
+            </ProtectedRoute>
+          } 
+        />
+          <Route 
             path="/dashboard" 
-            element={
-              isAuthenticated ? (
-                <Dashboard onLogout={handleLogout} user={user} />
-              ) : (
-                <Navigate to="/login" />
-              )
-            } 
+            element={<Navigate to="/home" replace />} 
           />
           <Route 
             path="/" 
-            element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} 
+            element={<Navigate to={isAuthenticated ? "/home" : "/login"} />} 
           />
         </Routes>
       </div>

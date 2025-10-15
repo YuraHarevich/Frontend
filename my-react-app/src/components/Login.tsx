@@ -1,3 +1,4 @@
+// components/Login.tsx
 import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../hooks/redux'
@@ -17,11 +18,12 @@ const Login: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard')
+      navigate('/home') // Изменено с /dashboard на /home
     }
     dispatch(clearError())
   }, [dispatch, isAuthenticated, navigate])
 
+  // Добавляем функцию handleChange
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({
@@ -35,7 +37,7 @@ const Login: React.FC = () => {
     const result = await dispatch(loginUser(formData))
     
     if (loginUser.fulfilled.match(result)) {
-      navigate('/dashboard')
+      navigate('/home') // Изменено с /dashboard на /home
     }
   }
 
@@ -60,7 +62,7 @@ const Login: React.FC = () => {
                 type="text"
                 placeholder="Enter your username"
                 value={formData.username}
-                onChange={handleChange}
+                onChange={handleChange} 
                 className="form-input"
                 required
                 disabled={isLoading}

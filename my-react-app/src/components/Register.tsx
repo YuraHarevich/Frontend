@@ -1,3 +1,4 @@
+// components/Register.tsx
 import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '../hooks/redux'
@@ -22,11 +23,12 @@ const Register: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard')
+      navigate('/home') // Изменено с /dashboard на /home
     }
     dispatch(clearError())
   }, [dispatch, isAuthenticated, navigate])
 
+  // Добавляем функцию handleChange
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({
@@ -43,16 +45,16 @@ const Register: React.FC = () => {
       return
     }
 
-  const formattedData = {
-    ...formData,
-    birthDate: formData.birthDate ? `${formData.birthDate}T00:00:00` : ''
-  }
+    const formattedData = {
+      ...formData,
+      birthDate: formData.birthDate ? `${formData.birthDate}T00:00:00` : ''
+    }
 
     const { confirmPassword, ...registerData } = formattedData
     const result = await dispatch(registerUser(registerData))
     
     if (registerUser.fulfilled.match(result)) {
-      navigate('/dashboard')
+      navigate('/home') // Изменено с /dashboard на /home
     }
   }
 
@@ -77,7 +79,7 @@ const Register: React.FC = () => {
                 type="text"
                 placeholder="Choose a username"
                 value={formData.username}
-                onChange={handleChange}
+                onChange={handleChange} 
                 className="form-input"
                 required
                 disabled={isLoading}
@@ -129,7 +131,7 @@ const Register: React.FC = () => {
                   type="text"
                   placeholder="Doe"
                   value={formData.lastname}
-                  onChange={handleChange}
+                  onChange={handleChange} 
                   className="form-input"
                   required
                   disabled={isLoading}
@@ -163,7 +165,7 @@ const Register: React.FC = () => {
                 type="password"
                 placeholder="Create a strong password"
                 value={formData.password}
-                onChange={handleChange}
+                onChange={handleChange} 
                 className="form-input"
                 required
                 disabled={isLoading}
@@ -180,7 +182,7 @@ const Register: React.FC = () => {
                 type="password"
                 placeholder="Confirm your password"
                 value={formData.confirmPassword}
-                onChange={handleChange}
+                onChange={handleChange} 
                 className="form-input"
                 required
                 disabled={isLoading}

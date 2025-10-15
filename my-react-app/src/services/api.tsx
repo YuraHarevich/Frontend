@@ -81,4 +81,11 @@ export const refreshToken = (refreshToken: string): Promise<AxiosResponse<TokenR
 export const getProtectedData = (): Promise<AxiosResponse<ProtectedData>> => 
   api.get<ProtectedData>('/api/v1/protected')
 
+export const validateToken = (): Promise<AxiosResponse<{valid: boolean; username: string; id: string}>> => {
+  const token = localStorage.getItem('accessToken')
+  return api.post(`/api/v1/auth/validate?token=${token}`)
+}
+
+
+
 export default api
