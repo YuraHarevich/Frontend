@@ -1,31 +1,43 @@
 // App.tsx
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react' // Добавляем useRef
 import { Provider } from 'react-redux'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import store from './store'
 import { useAppSelector, useAppDispatch } from './hooks/redux'
-import { validateToken } from './store/slices/authSlice'
+import { validateToken, logout } from './store/slices/authSlice'
 import Login from './components/Login'
 import Register from './components/Register'
 import { Home } from './components/Home'
 import ProtectedRoute from './components/ProtectedRoute'
 
 const AppContent: React.FC = () => {
-  const { isAuthenticated, user, accessToken } = useAppSelector((state) => state.auth)
+  const { isAuthenticated, user, accessToken, isCheckingAuth } = useAppSelector((state) => state.auth)
   const dispatch = useAppDispatch()
+  const validateCalledRef = useRef(false)
 
   useEffect(() => {
-    // При загрузке приложения проверяем токен, если он есть
-    if (accessToken) {
-      dispatch(validateToken())
+    if (accessToken && !validateCalledRef.current) {
+      validateCalledRef.current = true
+      console.log('Calling validateToken...')
+      dispatch(validateToken()).finally(() => {
+        validateCalledRef.current = false
+      })
+    } else if (!accessToken && isCheckingAuth) {
+      // Если токена нет, устанавливаем isCheckingAuth в false
+      dispatch({ type: 'auth/setCheckingAuth', payload: false })
     }
-  }, [dispatch, accessToken])
+  }, [dispatch, accessToken, isCheckingAuth])
 
   const handleLogout = () => {
-    // logout импортируем и используем из authSlice
-    import('./store/slices/authSlice').then(({ logout }) => {
-      dispatch(logout())
-    })
+    dispatch(logout())
+  }
+
+  if (isCheckingAuth) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner">Loading...</div>
+      </div>
+    )
   }
 
   return (
@@ -41,16 +53,12 @@ const AppContent: React.FC = () => {
             element={!isAuthenticated ? <Register /> : <Navigate to="/home" />} 
           />
           <Route 
-          path="/home" 
-          element={
-            <ProtectedRoute>
-              <Home onLogout={handleLogout} currentUser={user} />
-            </ProtectedRoute>
-          } 
-        />
-          <Route 
-            path="/dashboard" 
-            element={<Navigate to="/home" replace />} 
+            path="/home" 
+            element={
+              <ProtectedRoute>
+                <Home onLogout={handleLogout} currentUser={user} />
+              </ProtectedRoute>
+            } 
           />
           <Route 
             path="/" 

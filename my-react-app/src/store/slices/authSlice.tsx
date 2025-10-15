@@ -5,8 +5,7 @@ import type {
   AuthState,
   LoginCredentials,
   RegisterCredentials,
-  AuthResponse,
-  User
+  AuthResponse
 } from '../../types/auth'
 
 const initialState: AuthState = {
@@ -19,6 +18,55 @@ const initialState: AuthState = {
   isCheckingAuth: true,
 }
 
+export const validateToken = createAsyncThunk<
+  { valid: boolean; username: string; id: string },
+  void,
+  { rejectValue: string }
+>(
+  'auth/validateToken',
+  async (_, { rejectWithValue, dispatch }) => {
+    try {
+      const response = await api.validateToken()
+      return response.data
+    } catch (error: any) {
+      console.log('Token validation failed, attempting refresh...')
+      
+      // Пытаемся обновить токен при неудачной валидации
+      const refreshToken = localStorage.getItem('refreshToken')
+      if (refreshToken) {
+        try {
+          const refreshResponse = await api.refreshToken(refreshToken)
+          const { accessToken, refreshToken: newRefreshToken } = refreshResponse.data
+          
+          // Сохраняем новые токены
+          localStorage.setItem('accessToken', accessToken)
+          localStorage.setItem('refreshToken', newRefreshToken)
+          
+          // Повторяем валидацию с новым токеном
+          const retryResponse = await api.validateToken()
+          console.log('Token refreshed and validated successfully')
+          return retryResponse.data
+          
+        } catch (refreshError) {
+          console.error('Token refresh failed:', refreshError)
+          // Если refresh не удался, очищаем токены и завершаем с ошибкой
+          localStorage.removeItem('accessToken')
+          localStorage.removeItem('refreshToken')
+          return rejectWithValue(
+            'Session expired. Please login again.'
+          )
+        }
+      } else {
+        // Нет refresh токена
+        return rejectWithValue(
+          'No refresh token available. Please login again.'
+        )
+      }
+    }
+  }
+)
+
+// Остальные async thunks (loginUser, registerUser) остаются без изменений
 export const loginUser = createAsyncThunk<
   AuthResponse,
   LoginCredentials,
@@ -59,25 +107,6 @@ export const registerUser = createAsyncThunk<
   }
 )
 
-export const validateToken = createAsyncThunk<
-  { valid: boolean; username: string; id: string },
-  void,
-  { rejectValue: string }
->(
-  'auth/validateToken',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await api.validateToken()
-      return response.data
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || 
-        'Token validation failed'
-      )
-    }
-  }
-)
-
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -98,7 +127,7 @@ const authSlice = createSlice({
     setCheckingAuth: (state: AuthState, action: PayloadAction<boolean>) => {
       state.isCheckingAuth = action.payload
     },
-    setUser: (state: AuthState, action: PayloadAction<User>) => {
+    setUser: (state: AuthState, action: PayloadAction<any>) => {
       state.user = action.payload
     },
   },
