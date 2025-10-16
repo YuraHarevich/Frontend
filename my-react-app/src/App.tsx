@@ -1,10 +1,11 @@
 // App.tsx
-import React, { useEffect, useRef } from 'react' // Добавляем useRef
+import React, { useEffect, useRef } from 'react'
 import { Provider } from 'react-redux'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import store from './store'
 import { useAppSelector, useAppDispatch } from './hooks/redux'
 import { validateToken, logout } from './store/slices/authSlice'
+import { IconProvider } from './context/IconContext' // Добавляем импорт
 import Login from './components/Login'
 import Register from './components/Register'
 import { Home } from './components/Home'
@@ -41,32 +42,34 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <Router>
-      <div className="app">
-        <Routes>
-          <Route 
-            path="/login" 
-            element={!isAuthenticated ? <Login /> : <Navigate to="/home" />} 
-          />
-          <Route 
-            path="/register" 
-            element={!isAuthenticated ? <Register /> : <Navigate to="/home" />} 
-          />
-          <Route 
-            path="/home" 
-            element={
-              <ProtectedRoute>
-                <Home onLogout={handleLogout} currentUser={user} />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/" 
-            element={<Navigate to={isAuthenticated ? "/home" : "/login"} />} 
-          />
-        </Routes>
-      </div>
-    </Router>
+    <IconProvider> {/* Оборачиваем в IconProvider */}
+      <Router>
+        <div className="app">
+          <Routes>
+            <Route 
+              path="/login" 
+              element={!isAuthenticated ? <Login /> : <Navigate to="/home" />} 
+            />
+            <Route 
+              path="/register" 
+              element={!isAuthenticated ? <Register /> : <Navigate to="/home" />} 
+            />
+            <Route 
+              path="/home" 
+              element={
+                <ProtectedRoute>
+                  <Home onLogout={handleLogout} currentUser={user} />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/" 
+              element={<Navigate to={isAuthenticated ? "/home" : "/login"} />} 
+            />
+          </Routes>
+        </div>
+      </Router>
+    </IconProvider>
   )
 }
 

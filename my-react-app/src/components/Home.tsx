@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { postService } from '../services/postService';
+import { Icon } from './Icon';
+import { iconService } from '../services/iconService';
 import type { Post as PostType, PostsResponse } from '../types/post';
 import '../../styles/home.css';
 
@@ -9,128 +11,6 @@ interface HomeProps {
   currentUser: any;
   onLogout: () => void;
 }
-
-// SVG иконки (остаются без изменений)
-const HeartIcon = ({ filled = false }: { filled?: boolean }) => (
-  <svg 
-    width="24" 
-    height="24" 
-    viewBox="0 0 24 24" 
-    fill={filled ? "currentColor" : "none"} 
-    stroke="currentColor" 
-    strokeWidth="2"
-  >
-    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-  </svg>
-);
-
-const MessageCircleIcon = () => (
-  <svg 
-    width="24" 
-    height="24" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2"
-  >
-    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-  </svg>
-);
-
-const SendIcon = () => (
-  <svg 
-    width="24" 
-    height="24" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2"
-  >
-    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
-  </svg>
-);
-
-const HomeIcon = () => (
-  <svg 
-    width="24" 
-    height="24" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2"
-  >
-    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-    <polyline points="9 22 9 12 15 12 15 22" />
-  </svg>
-);
-
-const MessagesIcon = () => (
-  <svg 
-    width="24" 
-    height="24" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2"
-  >
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-  </svg>
-);
-
-const UserIcon = () => (
-  <svg 
-    width="24" 
-    height="24" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2"
-  >
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-    <circle cx="12" cy="7" r="4" />
-  </svg>
-);
-
-const LogOutIcon = () => (
-  <svg 
-    width="20" 
-    height="20" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2"
-  >
-    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-    <polyline points="16 17 21 12 16 7" />
-    <line x1="21" y1="12" x2="9" y2="12" />
-  </svg>
-);
-
-const ChevronLeftIcon = () => (
-  <svg 
-    width="24" 
-    height="24" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2"
-  >
-    <path d="M15 18l-6-6 6-6" />
-  </svg>
-);
-
-const ChevronRightIcon = () => (
-  <svg 
-    width="24" 
-    height="24" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2"
-  >
-    <path d="M9 18l6-6-6-6" />
-  </svg>
-);
 
 export function Home({ currentUser, onLogout }: HomeProps) {
   const [posts, setPosts] = useState<PostType[]>([]);
@@ -146,14 +26,40 @@ export function Home({ currentUser, onLogout }: HomeProps) {
     try {
       setLoading(true);
       const response: PostsResponse = await postService.getFeed({ page: 0, size: 10 });
-      
-      // Добавляем флаг isLiked к каждому посту с правильной типизацией
+
       const postsWithLikes: PostType[] = response.content.map((post: PostType) => ({
         ...post,
-        isLiked: false // По умолчанию не лайкнуто
+        isLiked: false
       }));
-      
-      setPosts(postsWithLikes);
+
+      // Fetch avatars for authors
+      const authorIds: string[] = postsWithLikes
+        .map(p => p.authorId)
+        .filter((id): id is string => Boolean(id));
+
+      let avatarsByParentId: Record<string, string> = {};
+      if (authorIds.length > 0) {
+        try {
+          const imagesResponse = await iconService.getImagesByParentIds(Array.from(new Set(authorIds)));
+          avatarsByParentId = (imagesResponse.content || []).reduce((acc: Record<string, string>, item) => {
+            const firstFile = item.files && item.files.length > 0 ? item.files[0].file : undefined;
+            if (firstFile) {
+              acc[item.parentId] = firstFile;
+            }
+            return acc;
+          }, {});
+        } catch (e) {
+          // If avatars fetch fails, keep fallback initials
+          console.warn('Failed to load avatars', e);
+        }
+      }
+
+      const postsWithAvatars = postsWithLikes.map(p => ({
+        ...p,
+        avatar: p.authorId ? avatarsByParentId[p.authorId] : undefined
+      }));
+
+      setPosts(postsWithAvatars);
     } catch (err) {
       setError('Failed to load posts');
       console.error('Error loading posts:', err);
@@ -243,7 +149,7 @@ export function Home({ currentUser, onLogout }: HomeProps) {
   );
 }
 
-// Header компонент
+// Header компонент с использованием Icon
 function Header({ currentUser, onLogout }: { currentUser: any; onLogout: () => void }) {
   const navigate = useNavigate();
 
@@ -262,18 +168,18 @@ function Header({ currentUser, onLogout }: { currentUser: any; onLogout: () => v
         
         <nav className="header-nav">
           <button className="nav-button active" title="Home">
-            <HomeIcon />
+            <Icon name="home" />
           </button>
           <button onClick={handleNavigateToMessages} className="nav-button" title="Messages">
-            <MessagesIcon />
+            <Icon name="message-circle" />
           </button>
           <button onClick={handleNavigateToProfile} className="nav-button" title="Profile">
-            <UserIcon />
+            <Icon name="user" />
           </button>
         </nav>
 
         <button onClick={onLogout} className="logout-icon-button" title="Logout">
-          <LogOutIcon />
+          <Icon name="log-out" width={20} height={20} />
         </button>
       </div>
     </header>
@@ -312,32 +218,18 @@ function PostComponent({ post, currentUser, onLike, onAddComment }: PostComponen
     );
   };
 
-  const formatDate = (dateString: string): string => {
+  const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    const diffInMinutes = Math.floor(diffInSeconds / 60);
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    const diffInDays = Math.floor(diffInHours / 24);
-    const diffInWeeks = Math.floor(diffInDays / 7);
-    const diffInMonths = Math.floor(diffInDays / 30);
-    const diffInYears = Math.floor(diffInDays / 365);
-
-    if (diffInSeconds < 60) {
-      return 'Just now';
-    } else if (diffInMinutes < 60) {
-      return `${diffInMinutes}m ago`;
-    } else if (diffInHours < 24) {
-      return `${diffInHours}h ago`;
-    } else if (diffInDays < 7) {
-      return `${diffInDays}d ago`;
-    } else if (diffInWeeks < 4) {
-      return `${diffInWeeks}w ago`;
-    } else if (diffInMonths < 12) {
-      return `${diffInMonths}mo ago`;
-    } else {
-      return `${diffInYears}y ago`;
-    }
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
+    return date.toLocaleDateString();
   };
 
   return (
@@ -345,7 +237,11 @@ function PostComponent({ post, currentUser, onLike, onAddComment }: PostComponen
       {/* Post Header */}
       <div className="post-header">
         <div className="user-avatar">
-          <span>{post.author?.charAt(0)?.toUpperCase() || 'U'}</span>
+          {post.avatar ? (
+            <img src={`data:image/jpeg;base64,${post.avatar}`} alt={`${post.author} avatar`} />
+          ) : (
+            <span>{post.author?.charAt(0)?.toUpperCase() || 'U'}</span>
+          )}
         </div>
         <div className="user-info">
           <p className="username">{post.author}</p>
@@ -371,13 +267,13 @@ function PostComponent({ post, currentUser, onLike, onAddComment }: PostComponen
               className="image-nav-button prev" 
               onClick={prevImage}
             >
-              <ChevronLeftIcon />
+              <Icon name="chevron-left" width={20} height={20} />
             </button>
             <button 
               className="image-nav-button next" 
               onClick={nextImage}
             >
-              <ChevronRightIcon />
+              <Icon name="chevron-right" width={20} height={20} />
             </button>
             
             {/* Image Indicators */}
@@ -400,16 +296,16 @@ function PostComponent({ post, currentUser, onLike, onAddComment }: PostComponen
             onClick={() => onLike(post.id)}
             className={`action-button ${post.isLiked ? 'liked' : ''}`}
           >
-            <HeartIcon filled={post.isLiked} />
+            <Icon name="heart" filled={post.isLiked} />
           </button>
           <button 
             onClick={() => setShowComments(!showComments)}
             className="action-button"
           >
-            <MessageCircleIcon />
+            <Icon name="message-circle" />
           </button>
           <button className="action-button">
-            <SendIcon />
+            <Icon name="send" />
           </button>
         </div>
 
@@ -426,25 +322,19 @@ function PostComponent({ post, currentUser, onLike, onAddComment }: PostComponen
           </p>
         )}
 
-        {/* View Comments Button - показывается всегда если есть комментарии */}
-        {post.numberOfComments > 0 && (
+        {/* View Comments Button */}
+        {!showComments && post.numberOfComments > 0 && (
           <button
-            onClick={() => setShowComments(!showComments)}
+            onClick={() => setShowComments(true)}
             className="view-comments-button"
           >
-            {showComments ? 'Hide comments' : `View all ${post.numberOfComments} comments`}
+            View all {post.numberOfComments} comments
           </button>
         )}
 
-        {/* Comments Section - показывается только при клике */}
+        {/* Comments Section */}
         {showComments && (
           <div className="comments-section">
-            {/* Здесь позже будут загружаться комментарии */}
-            <div className="comments-placeholder">
-              Comments will be loaded here...
-            </div>
-            
-            {/* Add Comment Form */}
             <form onSubmit={handleSubmitComment} className="add-comment-form">
               <div className="comment-avatar">
                 <span>{currentUser.username?.charAt(0)?.toUpperCase() || 'U'}</span>
@@ -465,26 +355,6 @@ function PostComponent({ post, currentUser, onLike, onAddComment }: PostComponen
               </button>
             </form>
           </div>
-        )}
-
-        {/* Если комментариев нет, показываем форму для добавления первого комментария */}
-        {!showComments && post.numberOfComments === 0 && (
-          <form onSubmit={handleSubmitComment} className="add-comment-form">
-            <input
-              type="text"
-              placeholder="Add a comment..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              className="comment-input"
-            />
-            <button
-              type="submit"
-              className="post-comment-button"
-              disabled={!newComment.trim()}
-            >
-              Post
-            </button>
-          </form>
         )}
       </div>
     </div>

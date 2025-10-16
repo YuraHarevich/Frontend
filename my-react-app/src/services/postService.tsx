@@ -1,6 +1,6 @@
 // services/postService.ts
 import api from './api';
-import type { Post, PostsResponse, GetPostsRequest } from '../types/post';
+import type {PostsResponse, GetPostsRequest } from '../types/post';
 
 export const postService = {
   // Получение ленты постов
