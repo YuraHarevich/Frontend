@@ -9,6 +9,7 @@ import { IconProvider } from './context/IconContext' // Добавляем им�
 import Login from './components/Login'
 import Register from './components/Register'
 import { Home } from './components/Home'
+import { Profile } from './components/Profile'
 import ProtectedRoute from './components/ProtectedRoute'
 
 const AppContent: React.FC = () => {
@@ -59,6 +60,14 @@ const AppContent: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <Home onLogout={handleLogout} currentUser={user} />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/profile" 
+              element={
+                <ProtectedRoute>
+                  {user && <Profile onLogout={handleLogout} currentUser={user} />}
                 </ProtectedRoute>
               } 
             />

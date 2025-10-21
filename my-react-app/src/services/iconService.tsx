@@ -25,4 +25,31 @@ export const iconService = {
     });
     return response.data;
   },
+
+  // Загрузка аватарки
+  uploadAvatar: async (parentEntityId: string, file: File): Promise<any> => {
+    const formData = new FormData();
+    
+    // Создаем Blob для imageType
+    const imageTypeBlob = new Blob(['AVATAR'], { 
+      type: 'text/plain' 
+    });
+    formData.append('imageType', imageTypeBlob);
+    
+    // Создаем Blob для parentEntityId
+    const parentEntityIdBlob = new Blob([parentEntityId], { 
+      type: 'text/plain' 
+    });
+    formData.append('parentEntityId', parentEntityIdBlob);
+    
+    // Добавляем файл
+    formData.append('file', file);
+
+    const response = await api.post('/api/v1/images', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
 };

@@ -5,10 +5,11 @@ import type {
   LoginCredentials,
   RegisterCredentials,
   TokenRefreshResponse,
-  ProtectedData
+  ProtectedData,
+  User
 } from '../types/auth'
 
-const API_BASE_URL = 'http://localhost:8000'
+const API_BASE_URL = 'http://localhost:9000'
 
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -50,7 +51,6 @@ const executeRefresh = async (): Promise<{ accessToken: string; refreshToken: st
     const tokens = await refreshPromise
     return tokens
   } finally {
-    // Очищаем промис после завершения (успешного или неудачного)
     refreshPromise = null
   }
 }
@@ -85,7 +85,23 @@ api.interceptors.response.use(
         localStorage.setItem('accessToken', tokens.accessToken)
         localStorage.setItem('refreshToken', tokens.refreshToken)
         
+        originalRequest.headers = originalRequest.headers || {}
         originalRequest.headers.Authorization = `Bearer ${tokens.accessToken}`
+
+        // Если в исходном запросе токен передавался как query param (?token=...), перепишем его
+        if (originalRequest.params && typeof originalRequest.params === 'object') {
+          originalRequest.params.token = tokens.accessToken
+        }
+
+        // А также, если URL уже содержит ?token=..., заменим значение в строке URL
+        if (typeof originalRequest.url === 'string') {
+          const url = new URL(originalRequest.url, API_BASE_URL)
+          if (url.searchParams.has('token')) {
+            url.searchParams.set('token', tokens.accessToken)
+            // Axios хранит относительный путь без baseURL, поэтому сохраняем pathname+search
+            originalRequest.url = `${url.pathname}${url.search}`
+          }
+        }
         console.log('Token refreshed successfully, retrying request...')
         return api(originalRequest)
       } catch (refreshError) {
@@ -117,5 +133,26 @@ export const validateToken = (): Promise<AxiosResponse<{valid: boolean; username
 
 export const getProtectedData = (): Promise<AxiosResponse<ProtectedData>> => 
   api.get<ProtectedData>('/api/v1/protected')
+
+export const getUserInfo = (): Promise<AxiosResponse<User>> => 
+  api.get<User>('/api/v1/auth/info')
+
+// Новые API функции для лайков и комментариев
+export const toggleLike = (postId: string, userId: string): Promise<AxiosResponse<any>> => {
+  console.log('API: Toggling like for post', { postId, userId });
+  return api.post('/api/v1/activities/likes', {
+    postId,
+    userId
+  })
+}
+
+export const addComment = (payload: string, posterId: string, postId: string): Promise<AxiosResponse<any>> => {
+  console.log('API: Adding comment', { payload, posterId, postId });
+  return api.post('/api/v1/activities/comments', {
+    payload,
+    posterId,
+    postId
+  })
+}
 
 export default api

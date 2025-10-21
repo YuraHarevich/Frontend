@@ -2,13 +2,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { postService } from '../services/postService';
+import { getUserInfo } from '../services/api';
 import { Icon } from './Icon';
 import { iconService } from '../services/iconService';
 import type { Post as PostType, PostsResponse } from '../types/post';
+import type { User } from '../types/auth';
 import '../../styles/home.css';
 
 interface HomeProps {
-  currentUser: any;
+  currentUser: User | null;
   onLogout: () => void;
 }
 
@@ -16,11 +18,26 @@ export function Home({ currentUser, onLogout }: HomeProps) {
   const [posts, setPosts] = useState<PostType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
+  const [userInfo, setUserInfo] = useState<User | null>(null);
+
+  console.log('Home component - currentUser:', currentUser);
+  console.log('Home component - userInfo:', userInfo);
 
   useEffect(() => {
+    loadUserInfo();
     loadPosts();
   }, []);
+
+  const loadUserInfo = async () => {
+    try {
+      const userResponse = await getUserInfo();
+      const userData = userResponse.data;
+      setUserInfo(userData);
+      console.log('Loaded user info:', userData);
+    } catch (err) {
+      console.error('Error loading user info:', err);
+    }
+  };
 
   const loadPosts = async () => {
     try {
@@ -70,15 +87,15 @@ export function Home({ currentUser, onLogout }: HomeProps) {
 
   const handleLike = async (postId: string) => {
     try {
+      const effectiveUser = userInfo || currentUser;
+      console.log('Handling like toggle:', { postId, effectiveUser });
       const post = posts.find(p => p.id === postId);
-      if (!post) return;
-
-      if (post.isLiked) {
-        await postService.unlikePost(postId);
-      } else {
-        await postService.likePost(postId);
+      if (!post || !effectiveUser?.id) {
+        console.log('Missing post or user ID:', { post, userId: effectiveUser?.id });
+        return;
       }
 
+      // Сначала обновляем UI
       setPosts(prev => prev.map(p => 
         p.id === postId 
           ? { 
@@ -88,15 +105,35 @@ export function Home({ currentUser, onLogout }: HomeProps) {
             }
           : p
       ));
+
+      // Затем отправляем запрос на переключение лайка
+      console.log('Toggling like for post');
+      await postService.toggleLike(postId, effectiveUser.id);
     } catch (err) {
-      console.error('Error liking post:', err);
+      console.error('Error toggling like:', err);
+      // В случае ошибки откатываем изменения
+      setPosts(prev => prev.map(p => 
+        p.id === postId 
+          ? { 
+              ...p, 
+              isLiked: !p.isLiked,
+              numberOfLikes: p.isLiked ? p.numberOfLikes + 1 : p.numberOfLikes - 1
+            }
+          : p
+      ));
     }
   };
 
   const handleAddComment = async (postId: string, text: string) => {
     try {
-      await postService.addComment(postId, text);
+      const effectiveUser = userInfo || currentUser;
+      console.log('Adding comment:', { postId, text, userId: effectiveUser?.id });
+      if (!effectiveUser?.id) {
+        console.log('No user ID available for comment');
+        return;
+      }
       
+      // Сначала обновляем UI
       setPosts(prev => prev.map(post =>
         post.id === postId
           ? {
@@ -105,15 +142,28 @@ export function Home({ currentUser, onLogout }: HomeProps) {
             }
           : post
       ));
+      
+      // Затем отправляем запрос
+      await postService.addComment(postId, text, effectiveUser.id);
+      console.log('Comment added successfully');
     } catch (err) {
       console.error('Error adding comment:', err);
+      // В случае ошибки откатываем изменения
+      setPosts(prev => prev.map(post =>
+        post.id === postId
+          ? {
+              ...post,
+              numberOfComments: post.numberOfComments - 1
+            }
+          : post
+      ));
     }
   };
 
   if (loading) {
     return (
       <div className="home-container">
-        <Header currentUser={currentUser} onLogout={onLogout} />
+        <Header onLogout={onLogout} />
         <div className="loading">Loading posts...</div>
       </div>
     );
@@ -122,7 +172,7 @@ export function Home({ currentUser, onLogout }: HomeProps) {
   if (error) {
     return (
       <div className="home-container">
-        <Header currentUser={currentUser} onLogout={onLogout} />
+        <Header onLogout={onLogout} />
         <div className="error">{error}</div>
       </div>
     );
@@ -130,7 +180,7 @@ export function Home({ currentUser, onLogout }: HomeProps) {
 
   return (
     <div className="home-container">
-      <Header currentUser={currentUser} onLogout={onLogout} />
+      <Header onLogout={onLogout} />
       
       <main className="home-main">
         <div className="posts-container">
@@ -138,7 +188,7 @@ export function Home({ currentUser, onLogout }: HomeProps) {
             <PostComponent
               key={post.id}
               post={post}
-              currentUser={currentUser}
+              currentUser={userInfo || currentUser}
               onLike={handleLike}
               onAddComment={handleAddComment}
             />
@@ -150,7 +200,7 @@ export function Home({ currentUser, onLogout }: HomeProps) {
 }
 
 // Header компонент с использованием Icon
-function Header({ currentUser, onLogout }: { currentUser: any; onLogout: () => void }) {
+function Header({ onLogout }: { onLogout: () => void }) {
   const navigate = useNavigate();
 
   const handleNavigateToMessages = () => {
@@ -158,7 +208,7 @@ function Header({ currentUser, onLogout }: { currentUser: any; onLogout: () => v
   };
 
   const handleNavigateToProfile = () => {
-    console.log('Navigate to profile');
+    navigate('/profile');
   };
 
   return (
@@ -188,7 +238,7 @@ function Header({ currentUser, onLogout }: { currentUser: any; onLogout: () => v
 
 interface PostComponentProps {
   post: PostType;
-  currentUser: any;
+  currentUser: User | null;
   onLike: (postId: string) => void;
   onAddComment: (postId: string, text: string) => void;
 }
@@ -200,6 +250,7 @@ function PostComponent({ post, currentUser, onLike, onAddComment }: PostComponen
 
   const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Submitting comment:', { postId: post.id, text: newComment, currentUser: currentUser });
     if (newComment.trim()) {
       onAddComment(post.id, newComment);
       setNewComment('');
@@ -293,10 +344,13 @@ function PostComponent({ post, currentUser, onLike, onAddComment }: PostComponen
       <div className="post-actions">
         <div className="actions-row">
           <button 
-            onClick={() => onLike(post.id)}
+            onClick={() => {
+              console.log('Like button clicked for post:', post.id);
+              onLike(post.id);
+            }}
             className={`action-button ${post.isLiked ? 'liked' : ''}`}
           >
-            <Icon name="heart" filled={post.isLiked} />
+            <Icon name={post.isLiked ? "heart-filled" : "heart"} />
           </button>
           <button 
             onClick={() => setShowComments(!showComments)}
@@ -337,7 +391,7 @@ function PostComponent({ post, currentUser, onLike, onAddComment }: PostComponen
           <div className="comments-section">
             <form onSubmit={handleSubmitComment} className="add-comment-form">
               <div className="comment-avatar">
-                <span>{currentUser.username?.charAt(0)?.toUpperCase() || 'U'}</span>
+                <span>{currentUser?.username?.charAt(0)?.toUpperCase() || 'U'}</span>
               </div>
               <input
                 type="text"
@@ -350,6 +404,13 @@ function PostComponent({ post, currentUser, onLike, onAddComment }: PostComponen
                 type="submit"
                 className="post-comment-button"
                 disabled={!newComment.trim()}
+                onClick={(e) => {
+                  console.log('Comment button clicked');
+                  if (!newComment.trim()) {
+                    e.preventDefault();
+                    console.log('Comment is empty, preventing submit');
+                  }
+                }}
               >
                 Post
               </button>

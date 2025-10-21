@@ -67,9 +67,12 @@ export const validateToken = createAsyncThunk<
   'auth/validateToken',
   async (_, { rejectWithValue }) => {
     try {
+      console.log('Calling validateToken API...')
       const response = await api.validateToken()
+      console.log('validateToken API response:', response.data)
       return response.data
     } catch (error: any) {
+      console.error('validateToken API error:', error)
       return rejectWithValue(
         error.response?.data?.message || 
         'Token validation failed'
@@ -153,6 +156,7 @@ const authSlice = createSlice({
         state.isCheckingAuth = true
       })
       .addCase(validateToken.fulfilled, (state: AuthState, action) => {
+        console.log('validateToken.fulfilled:', action.payload)
         state.isCheckingAuth = false
         if (action.payload.valid) {
           state.isAuthenticated = true
@@ -166,10 +170,12 @@ const authSlice = createSlice({
               lastname: '',
               birthDate: ''
             }
+            console.log('Created new user:', state.user)
           } else {
             // Обновляем информацию о пользователе
             state.user.username = action.payload.username
             state.user.id = action.payload.id
+            console.log('Updated existing user:', state.user)
           }
         } else {
           state.isAuthenticated = false
