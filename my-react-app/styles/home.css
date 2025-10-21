@@ -307,6 +307,20 @@
   color: #262626;
 }
 
+.hide-comments-button {
+  background: none;
+  border: none;
+  color: #8e8e8e;
+  cursor: pointer;
+  padding: 0;
+  font-size: 14px;
+  transition: color 0.2s ease;
+}
+
+.hide-comments-button:hover {
+  color: #262626;
+}
+
 .comments-section {
   border-top: 1px solid #f0f0f0;
   padding-top: 16px;

@@ -212,7 +212,7 @@ function Header({ onLogout }: { onLogout: () => void }) {
   const navigate = useNavigate();
 
   const handleNavigateToMessages = () => {
-    console.log('Navigate to messages');
+    navigate('/messages');
   };
 
   const handleNavigateToProfile = () => {
@@ -415,6 +415,16 @@ function PostComponent({ post, currentUser, onLike, onAddComment }: PostComponen
             className="view-comments-button"
           >
             View all {post.numberOfComments} comments
+          </button>
+        )}
+
+        {/* Hide Comments Button */}
+        {showInlineComments && (
+          <button
+            onClick={() => setShowInlineComments(false)}
+            className="hide-comments-button"
+          >
+            Hide comments
           </button>
         )}
 

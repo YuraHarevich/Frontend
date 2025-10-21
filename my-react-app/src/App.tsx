@@ -10,6 +10,7 @@ import Login from './components/Login'
 import Register from './components/Register'
 import { Home } from './components/Home'
 import { Profile } from './components/Profile'
+import { Messages } from './components/Messages'
 import ProtectedRoute from './components/ProtectedRoute'
 
 const AppContent: React.FC = () => {
@@ -68,6 +69,14 @@ const AppContent: React.FC = () => {
               element={
                 <ProtectedRoute>
                   {user && <Profile onLogout={handleLogout} currentUser={user} />}
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/messages" 
+              element={
+                <ProtectedRoute>
+                  {user && <Messages onLogout={handleLogout} currentUser={user} />}
                 </ProtectedRoute>
               } 
             />

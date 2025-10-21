@@ -231,7 +231,7 @@ function Header({ onLogout }: { onLogout: () => void }) {
   };
 
   const handleNavigateToMessages = () => {
-    console.log('Navigate to messages');
+    navigate('/messages');
   };
 
   const handleNavigateToProfile = () => {
