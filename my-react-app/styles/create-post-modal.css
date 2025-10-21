@@ -182,8 +182,8 @@
 
 .remove-file-button {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 2px;
+  right: 2px;
   background: rgba(0, 0, 0, 0.7);
   border: none;
   border-radius: 50%;
@@ -195,6 +195,8 @@
   cursor: pointer;
   color: white;
   transition: background 0.2s ease;
+  padding: 0;
+  margin: 0;
 }
 
 .remove-file-button:hover:not(:disabled) {

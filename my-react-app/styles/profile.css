@@ -212,7 +212,14 @@
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
+  line-height: 1;
+}
+
+.create-post-button svg {
+  vertical-align: middle;
+  display: inline-block;
 }
 
 .create-post-button:hover {

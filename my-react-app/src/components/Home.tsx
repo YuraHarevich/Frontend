@@ -5,9 +5,11 @@ import { postService } from '../services/postService';
 import { getUserInfo } from '../services/api';
 import { Icon } from './Icon';
 import { iconService } from '../services/iconService';
+import { InlineComments } from './InlineComments';
 import type { Post as PostType, PostsResponse } from '../types/post';
 import type { User } from '../types/auth';
 import '../../styles/home.css';
+import '../../styles/inline-comments.css';
 
 interface HomeProps {
   currentUser: User | null;
@@ -146,6 +148,12 @@ export function Home({ currentUser, onLogout }: HomeProps) {
       // Затем отправляем запрос
       await postService.addComment(postId, text, effectiveUser.id);
       console.log('Comment added successfully');
+      
+      // Обновляем комментарии для всех постов с открытыми комментариями
+      setPosts(prev => prev.map(post => ({
+        ...post,
+        refreshComments: post.id === postId ? Date.now() : post.refreshComments
+      })));
     } catch (err) {
       console.error('Error adding comment:', err);
       // В случае ошибки откатываем изменения
@@ -245,8 +253,32 @@ interface PostComponentProps {
 
 function PostComponent({ post, currentUser, onLike, onAddComment }: PostComponentProps) {
   const [showComments, setShowComments] = useState(false);
+  const [showInlineComments, setShowInlineComments] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
+
+  // Загружаем аватар пользователя
+  useEffect(() => {
+    const loadUserAvatar = async () => {
+      if (currentUser?.id) {
+        try {
+          const imagesResponse = await iconService.getImagesByParentIds([currentUser.id]);
+          if (imagesResponse.content && imagesResponse.content.length > 0) {
+            const firstFile = imagesResponse.content[0].files && imagesResponse.content[0].files.length > 0 
+              ? imagesResponse.content[0].files[0].file 
+              : undefined;
+            if (firstFile) {
+              setUserAvatar(firstFile);
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to load user avatar', e);
+        }
+      }
+    };
+    loadUserAvatar();
+  }, [currentUser?.id]);
 
   const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -377,9 +409,9 @@ function PostComponent({ post, currentUser, onLike, onAddComment }: PostComponen
         )}
 
         {/* View Comments Button */}
-        {!showComments && post.numberOfComments > 0 && (
+        {!showInlineComments && post.numberOfComments > 0 && (
           <button
-            onClick={() => setShowComments(true)}
+            onClick={() => setShowInlineComments(true)}
             className="view-comments-button"
           >
             View all {post.numberOfComments} comments
@@ -391,7 +423,11 @@ function PostComponent({ post, currentUser, onLike, onAddComment }: PostComponen
           <div className="comments-section">
             <form onSubmit={handleSubmitComment} className="add-comment-form">
               <div className="comment-avatar">
-                <span>{currentUser?.username?.charAt(0)?.toUpperCase() || 'U'}</span>
+                {userAvatar ? (
+                  <img src={`data:image/jpeg;base64,${userAvatar}`} alt={`${currentUser?.username} avatar`} />
+                ) : (
+                  <span>{currentUser?.username?.charAt(0)?.toUpperCase() || 'U'}</span>
+                )}
               </div>
               <input
                 type="text"
@@ -418,6 +454,15 @@ function PostComponent({ post, currentUser, onLike, onAddComment }: PostComponen
           </div>
         )}
       </div>
+
+      {/* Inline Comments */}
+      {showInlineComments && (
+        <InlineComments
+          postId={post.id}
+          isVisible={showInlineComments}
+          refreshKey={post.refreshComments}
+        />
+      )}
     </div>
   );
 }

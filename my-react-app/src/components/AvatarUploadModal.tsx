@@ -104,7 +104,7 @@ export function AvatarUploadModal({ isOpen, onClose, onAvatarUploaded, currentUs
             onClick={handleClose}
             disabled={isLoading}
           >
-            <Icon name="cross" width={20} height={20} />
+            <Icon name="cross" width={24} height={24} />
           </button>
         </div>
 
@@ -146,7 +146,7 @@ export function AvatarUploadModal({ isOpen, onClose, onAvatarUploaded, currentUs
                     className="remove-button"
                     disabled={isLoading}
                   >
-                    <Icon name="cross" width={16} height={16} />
+                    <Icon name="cross" width={24} height={24} />
                   </button>
                 </div>
                 <p className="file-info">

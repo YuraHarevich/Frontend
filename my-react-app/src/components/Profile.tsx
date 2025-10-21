@@ -150,7 +150,7 @@ export function Profile({ currentUser, onLogout }: ProfileProps) {
                     className="create-post-button"
                     onClick={() => setIsCreatePostModalOpen(true)}
                   >
-                    <Icon name="plus" width={16} height={16} />
+                    <Icon name="plus" width={24} height={24} />
                     <span>Create Post</span>
                   </button>
                   <button className="edit-profile-button">Edit Profile</button>
@@ -177,7 +177,6 @@ export function Profile({ currentUser, onLogout }: ProfileProps) {
           <div className="posts-section">
             <div className="posts-tabs">
               <button className="tab-button active">
-                <Icon name="grid" />
                 <span>POSTS</span>
               </button>
             </div>

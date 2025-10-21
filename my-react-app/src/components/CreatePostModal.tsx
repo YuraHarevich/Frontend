@@ -109,7 +109,7 @@ export function CreatePostModal({ isOpen, onClose, onPostCreated, currentUser }:
             onClick={handleClose}
             disabled={isLoading}
           >
-            <Icon name="cross" width={20} height={20} />
+            <Icon name="cross" width={24} height={24} />
           </button>
         </div>
 
@@ -174,7 +174,7 @@ export function CreatePostModal({ isOpen, onClose, onPostCreated, currentUser }:
                       className="remove-file-button"
                       disabled={isLoading}
                     >
-                      <Icon name="cross" width={16} height={16} />
+                      <Icon name="cross" width={24} height={24} />
                     </button>
                   </div>
                 ))}

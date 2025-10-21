@@ -9,6 +9,7 @@ export interface Post {
   files: string[];
   isLiked?: boolean;
   avatar?: string; // base64 avatar image (data without prefix)
+  refreshComments?: number; // timestamp for refreshing comments
 }
 
 export interface PostsResponse {
